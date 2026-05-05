@@ -7,8 +7,20 @@ existing algorithms and measure the performance of sequential and parallel algor
 
 #include <iostream>
 #include <vector>
+#include <chrono>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 using namespace std;
+
+double nowSeconds() {
+#ifdef _OPENMP
+    return omp_get_wtime();
+#else
+    using clock = chrono::high_resolution_clock;
+    return chrono::duration<double>(clock::now().time_since_epoch()).count();
+#endif
+}
 
 // Function to print array
 void printArray(vector<int>& arr) {
@@ -67,9 +79,9 @@ int main() {
     double start, end;
 
     // Sequential
-    start = omp_get_wtime();
+    start = nowSeconds();
     bubbleSortSeq(arr1);
-    end = omp_get_wtime();
+    end = nowSeconds();
 
     cout << "\nSorted Array (Sequential): ";
     printArray(arr1);
@@ -77,9 +89,9 @@ int main() {
     cout << "Sequential Bubble Sort Time: " << end - start << " sec\n";
 
     // Parallel
-    start = omp_get_wtime();
+    start = nowSeconds();
     bubbleSortParallel(arr2);
-    end = omp_get_wtime();
+    end = nowSeconds();
 
     cout << "\nSorted Array (Parallel): ";
     printArray(arr2);
