@@ -1,87 +1,107 @@
+/*Design and implement Parallel Breadth First Search and Depth First Search based on
+existing algorithms using OpenMP. Use a Tree or an undirected graph for BFS and DFS */
+
+
+
+
 #include <iostream>
 #include <vector>
 #include <queue>
 #include <omp.h>
-
 using namespace std;
 
+vector<vector<int>> graph;
+vector<bool> visited;
 
-class Graph {
-    int V;  
-    vector<vector<int>> adj;  
+// ----------- Parallel BFS -----------
+void parallelBFS(int start) {
+    queue<int> q;
+    q.push(start);
+    visited[start] = true;
 
-public:
-    Graph(int V) : V(V), adj(V) {}
+    cout << "\nParallel BFS Traversal: ";
 
-    
-    void addEdge(int v, int w) {
-        adj[v].push_back(w);
-    }
+    while (!q.empty()) {
+        int node;
 
-    
-    void parallelDFS(int startVertex) {
-        vector<bool> visited(V, false);
-        parallelDFSUtil(startVertex, visited);
-    }
-
-    void parallelDFSUtil(int v, vector<bool>& visited) {
-        visited[v] = true;
-        cout << v << " ";
+        #pragma omp critical
+        {
+            node = q.front();
+            q.pop();
+            cout << node << " ";
+        }
 
         #pragma omp parallel for
-        for (int i = 0; i < adj[v].size(); ++i) {
-            int n = adj[v][i];
-            if (!visited[n])
-                parallelDFSUtil(n, visited);
-        }
-    }
+        for (int i = 0; i < graph[node].size(); i++) {
+            int adj = graph[node][i];
 
-    
-    void parallelBFS(int startVertex) {
-        vector<bool> visited(V, false);
-        queue<int> q;
-
-        visited[startVertex] = true;
-        q.push(startVertex);
-
-        while (!q.empty()) {
-            int v = q.front();
-            q.pop();
-            cout << v << " ";
-
-            #pragma omp parallel for
-            for (int i = 0; i < adj[v].size(); ++i) {
-                int n = adj[v][i];
-                if (!visited[n]) {
-                    visited[n] = true;
-                    q.push(n);
+            if (!visited[adj]) {
+                #pragma omp critical
+                {
+                    if (!visited[adj]) {
+                        visited[adj] = true;
+                        q.push(adj);
+                    }
                 }
             }
         }
     }
-};
-
-int main() {
-    
-    Graph g(7);
-    g.addEdge(0, 1);
-    g.addEdge(0, 2);
-    g.addEdge(1, 3);
-    g.addEdge(1, 4);
-    g.addEdge(2, 5);
-    g.addEdge(2, 6);
-
-    cout << "Depth-First Search (DFS): ";
-    g.parallelDFS(0);
-    cout << endl;
-
-    cout << "Breadth-First Search (BFS): ";
-    g.parallelBFS(0);
-    cout << endl;
-
-    return 0;
 }
 
+// ----------- Parallel DFS -----------
+void parallelDFS(int node) {
 
+    #pragma omp critical
+    {
+        cout << node << " ";
+    }
 
+    visited[node] = true;
 
+    #pragma omp parallel for
+    for (int i = 0; i < graph[node].size(); i++) {
+        int adj = graph[node][i];
+
+        if (!visited[adj]) {
+            parallelDFS(adj);
+        }
+    }
+}
+
+// ----------- Main Function -----------
+int main() {
+    int n, edges;
+
+    cout << "Enter number of nodes: ";
+    cin >> n;
+
+    graph.resize(n);
+    visited.resize(n, false);
+
+    cout << "Enter number of edges: ";
+    cin >> edges;
+
+    cout << "Enter edges (u v):\n";
+    for (int i = 0; i < edges; i++) {
+        int u, v;
+        cin >> u >> v;
+        graph[u].push_back(v);
+        graph[v].push_back(u); // undirected graph
+    }
+
+    int start;
+    cout << "Enter starting node: ";
+    cin >> start;
+
+    // BFS
+    parallelBFS(start);
+
+    // Reset visited for DFS
+    fill(visited.begin(), visited.end(), false);
+
+    cout << "\nParallel DFS Traversal: ";
+    parallelDFS(start);
+
+    cout << endl;
+    return 0;
+}
