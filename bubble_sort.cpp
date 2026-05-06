@@ -65,13 +65,21 @@ void bubbleSortParallel(vector<int>& arr) {
 int main() {
     int n;
     cout << "Enter number of elements: ";
-    cin >> n;
+    if (!(cin >> n) || n <= 0) {
+        cerr << "Invalid number of elements.\n";
+        return 1;
+    }
 
     vector<int> arr(n), arr1, arr2;
 
     cout << "Enter elements:\n";
-    for (int i = 0; i < n; i++)
-        cin >> arr[i];
+    for (int i = 0; i < n; i++) {
+        cout << "Element " << i + 1 << ": ";
+        if (!(cin >> arr[i])) {
+            cerr << "Invalid input for element " << i + 1 << ".\n";
+            return 1;
+        }
+    }
 
     arr1 = arr;
     arr2 = arr;
